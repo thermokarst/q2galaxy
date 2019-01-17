@@ -30,8 +30,11 @@ def all(output):
 
 
 @template.command()
+@click.argument('output', type=click.Path(file_okay=False, dir_okay=True,
+                                          exists=True))
 def tests():
-    pass
+    _init_test_plugin()
+    template_all(output)
 
 
 @root.command()
@@ -40,6 +43,8 @@ def tests():
 @click.argument('inputs', type=click.Path(file_okay=True, dir_okay=False,
                                           exists=True))
 def run(plugin, action, inputs):
+    if plugin == 'q2galaxy_test_suite':
+        _init_test_plugin()
     with open(inputs, 'r') as fh:
         config = json.load(fh)
     action_runner(plugin, action, config)
@@ -51,3 +56,8 @@ def version(plugin):
     print('%s version %s' % (plugin, get_version(plugin)))
 
 
+def _init_test_plugin():
+    from .test_suite.plugin_setup import plugin as test_suite_plugin
+
+    pm = sdk.PluginManager(install_plugins=False)
+    pm.install_plugin(test_suite_plugin)

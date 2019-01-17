@@ -1,5 +1,6 @@
 import qiime2.sdk as sdk
 
+
 def action_runner(plugin_id, action_id, inputs):
     pm = sdk.PluginManager()
     plugin = pm.plugins[plugin_id.replace('_', '-')]
