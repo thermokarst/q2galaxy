@@ -14,6 +14,7 @@ def action_runner(plugin_id, action_id, inputs):
     for name, result in zip(results._fields, results):
         result.save(name)
 
+
 def get_version(plugin_id):
     pm = sdk.PluginManager()
     plugin = pm.plugins[plugin_id.replace('_', '-')]
