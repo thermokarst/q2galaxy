@@ -1,12 +1,12 @@
-from qiime2.plugin import (
-    Plugin, SemanticType, SingleFileDirectoryFormat, TextFileFormat)
+from qiime2.plugin import Plugin, SemanticType, TextFileFormat
+from qiime2.plugin.model import SingleFileDirectoryFormat
 
 
 from . import EchoContents
 
 
 plugin = Plugin(
-    name='q2galaxy-test-suite',
+    name='q2-ice-cream-shoppe',
     description='a test suite description',
     short_description='a test suite short description',
     version='0.0.0.dev',
@@ -26,20 +26,20 @@ _UndefinedDir = SingleFileDirectoryFormat(
 
 plugin.register_formats(_Undefined, _UndefinedDir)
 
-_Squadron = SemanticType('_Squadron', fields='color')
-plugin.register_semantic_types(_Squadron)
+Unflavored = SemanticType('_Squadron', field_names=['flavor'])
+plugin.register_semantic_types(Unflavored)
 
 
 def _type_macro(name):
-    t = SemanticType(name, variant_of=_Squadron.field['color'])
+    t = SemanticType(name, variant_of=Unflavored.field['flavor'])
     plugin.register_semantic_types(t)
-    plugin.register_semantic_type_to_format(_Squadron[t], _UndefinedDir)
+    plugin.register_semantic_type_to_format(Unflavored[t], _UndefinedDir)
     return t
 
 
-_Red = _type_macro('_Red')
-_Gold = _type_macro('_Gold')
-_Green = _type_macro('_Green')
+Chocolate = _type_macro('Chocolate')
+Vanilla = _type_macro('Vanilla')
+Pistachio = _type_macro('Pistachio')
 
 
 @plugin.register_transformer
@@ -54,3 +54,25 @@ def _1(contents: EchoContents) -> _Undefined:
 def _2(ff: _Undefined) -> EchoContents:
     with ff.open() as fh:
         return EchoContents(fh.read())
+
+
+def look_at_it(serving: _Undefined) -> _Undefined:
+    return serving
+
+
+def window_shopping(use):
+    pass
+
+
+plugin.methods.register_function(
+    function=look_at_it,
+    inputs={'serving': Vanilla},
+    parameters={},
+    outputs=[('untouched_serving', Vanilla)],
+    input_descriptions={'serving': 'The most perfect ice cream ever.'},
+    parameter_descriptions={},
+    output_descriptions={'untouched_serving': 'Slightly warmer ice cream.'},
+    name='Look at that ice cream!',
+    description='Wow! So tasty! Will you _look_ at that ice cream?!',
+    examples=[window_shopping],
+)

@@ -16,7 +16,7 @@ def XMLNode(name_, **attrs):
 
 def _hack_requirements():
     requirements = XMLNode('requirements')
-    requirement = XMLNode('requirement', type='package', version='2018.11.0')
+    requirement = XMLNode('requirement', type='package', version='2019.7.0')
     requirement.text = 'qiime2'
     requirements.append(requirement)
     return requirements
@@ -96,6 +96,12 @@ def make_tool(plugin_id, action, version):
         output = make_output(name, spec)
         outputs.append(output)
 
+    if action.examples:
+        examples = XMLNode('tests')
+        tool.append(examples)
+        for example in action.examples:
+            examples.append(make_example(example))
+
     return tool
 
 
@@ -155,3 +161,8 @@ def make_citations(citations):
 
 def make_tool_name(plugin_id, action_id):
     return plugin_id.replace('_', '-') + ' ' + action_id.replace('_', '-')
+
+
+def make_example(example):
+    # TODO: make a driver, do the thing
+    return XMLNode('test')

@@ -32,7 +32,7 @@ def all(output):
 @template.command()
 @click.argument('output', type=click.Path(file_okay=False, dir_okay=True,
                                           exists=True))
-def tests():
+def tests(output):
     _init_test_plugin()
     template_all(output)
 
@@ -57,7 +57,8 @@ def version(plugin):
 
 
 def _init_test_plugin():
+    import qiime2.sdk
     from .test_suite.plugin_setup import plugin as test_suite_plugin
 
-    pm = sdk.PluginManager(install_plugins=False)
+    pm = qiime2.sdk.PluginManager(install_plugins=False)
     pm.install_plugin(test_suite_plugin)
