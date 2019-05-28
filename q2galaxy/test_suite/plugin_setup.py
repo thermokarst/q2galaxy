@@ -6,7 +6,7 @@ from . import EchoContents
 
 
 plugin = Plugin(
-    name='q2-ice-cream-shoppe',
+    name='q2-sundae',
     description='a test suite description',
     short_description='a test suite short description',
     version='0.0.0.dev',
