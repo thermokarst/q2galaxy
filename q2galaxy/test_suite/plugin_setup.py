@@ -26,14 +26,14 @@ _UndefinedDir = SingleFileDirectoryFormat(
 
 plugin.register_formats(_Undefined, _UndefinedDir)
 
-Unflavored = SemanticType('_Squadron', field_names=['flavor'])
-plugin.register_semantic_types(Unflavored)
+IceCream = SemanticType('IceCream', field_names=['flavor'])
+plugin.register_semantic_types(IceCream)
 
 
 def _type_macro(name):
-    t = SemanticType(name, variant_of=Unflavored.field['flavor'])
+    t = SemanticType(name, variant_of=IceCream.field['flavor'])
     plugin.register_semantic_types(t)
-    plugin.register_semantic_type_to_format(Unflavored[t], _UndefinedDir)
+    plugin.register_semantic_type_to_format(IceCream[t], _UndefinedDir)
     return t
 
 
@@ -56,19 +56,34 @@ def _2(ff: _Undefined) -> EchoContents:
         return EchoContents(fh.read())
 
 
-def look_at_it(serving: _Undefined) -> _Undefined:
+def look_at_it(serving: EchoContents) -> EchoContents:
     return serving
 
 
+def artifact_factory_1():
+    x = EchoContents(value='neat')
+    return Artifact.import_data('IceCream[Vanilla]', x)
+
+
 def window_shopping(use):
-    pass
+    look_at_it = use.get_action('q2-sundae', 'look_at_it')
+    use.scope.add_artifact('tasty', artifact_factory_1)
+
+    use.comment('goodbye world')
+    use.action(look_at_it, {'serving': 'tasty'}, {'untouched_serving': 'foo'})
+    use.assert_has_line_matching(
+        label='just checkin',
+        result='foo',
+        path='*/data/echo.txt',
+        expression='.*',
+    )
 
 
 plugin.methods.register_function(
     function=look_at_it,
-    inputs={'serving': Vanilla},
+    inputs={'serving': IceCream[Vanilla]},
     parameters={},
-    outputs=[('untouched_serving', Vanilla)],
+    outputs=[('untouched_serving', IceCream[Vanilla])],
     input_descriptions={'serving': 'The most perfect ice cream ever.'},
     parameter_descriptions={},
     output_descriptions={'untouched_serving': 'Slightly warmer ice cream.'},
