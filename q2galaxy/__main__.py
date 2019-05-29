@@ -36,7 +36,8 @@ def all(output):
 @template.command()
 @click.argument('output', type=_OUTPUT_DIR)
 def tests(output):
-    pass
+    _init_test_plugin()
+    template_all(output)
 
 
 @root.command()
@@ -45,6 +46,8 @@ def tests(output):
 @click.argument('inputs', type=click.Path(file_okay=True, dir_okay=False,
                                           exists=True))
 def run(plugin, action, inputs):
+    if plugin == 'q2galaxy_test_suite':
+        _init_test_plugin()
     with open(inputs, 'r') as fh:
         config = json.load(fh)
     action_runner(plugin, action, config)
@@ -54,6 +57,14 @@ def run(plugin, action, inputs):
 @click.argument('plugin', type=str)
 def version(plugin):
     print('%s version %s' % (plugin, get_version(plugin)))
+
+
+def _init_test_plugin():
+    import qiime2.sdk
+    from .test_suite.plugin_setup import plugin as test_suite_plugin
+
+    pm = qiime2.sdk.PluginManager(install_plugins=False)
+    pm.install_plugin(test_suite_plugin)
 
 
 if __name__ == '__main__':
