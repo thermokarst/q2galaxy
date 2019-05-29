@@ -2,23 +2,28 @@ import os
 import xml.etree.ElementTree as xml
 import xml.dom.minidom as dom
 
-import bs4
+import bs4  # TODO: can remove?
 
 import qiime2.sdk as sdk
+
+import q2galaxy.env
 
 INPUT_FILE = 'inputs.json'
 OUTPUT_FILE = 'outputs.json'
 
 
-def XMLNode(name_, **attrs):
-    return xml.Element(name_, attrs)
+def XMLNode(name_, _text=None, **attrs):
+    e = xml.Element(name_, attrs)
+    if _text is not None:
+        e.text = _text
+    return e
 
 
-def _hack_requirements():
+def extract_requirements(project_name):
     requirements = XMLNode('requirements')
-    requirement = XMLNode('requirement', type='package', version='2018.11.0')
-    requirement.text = 'qiime2'
-    requirements.append(requirement)
+    for dep, version in q2galaxy.env.extract_environment(project_name).items():
+        r = XMLNode('requirement', dep, type='package', version=version)
+        requirements.append(r)
     return requirements
 
 
@@ -40,7 +45,7 @@ def write_tool(directory, plugin_id, action_id):
 
     filename = os.path.join(directory, get_tool_id(action) + '.xml')
 
-    tool = make_tool(plugin_id, action, plugin.version)
+    tool = make_tool(plugin, plugin_id, action, plugin.version)
 
     with open(filename, 'w') as fh:
         xmlstr = dom.parseString(xml.tostring(tool)).toprettyxml(indent="   ")
@@ -53,49 +58,36 @@ def make_config():
     return configfiles
 
 
-def make_tool(plugin_id, action, version):
-    tool = XMLNode('tool', id=get_tool_id(action),
-                   name=make_tool_name(plugin_id, action.id),
-                   version=version,
-                   profile='18.09')
-
-    inputs = XMLNode('inputs')
-    outputs = XMLNode('outputs')
-
-    description = XMLNode('description')
-    description.text = action.name
-    help_ = XMLNode('help')
-    help_.text = action.description
-
-    command = make_command(plugin_id, action.id)
-    version_command = make_version_command(plugin_id)
-
-    _hack = _hack_requirements()
-    tool.append(_hack)
-
-    tool.append(description)
-    tool.append(command)
-    tool.append(version_command)
-    tool.append(make_config())
-    tool.append(inputs)
-    tool.append(outputs)
-    tool.append(help_)
-
+def make_tool(plugin, plugin_id, action, version):
     signature = action.signature
 
+    inputs = XMLNode('inputs')
     for name, spec in signature.inputs.items():
         param = make_input_param(name, spec)
         inputs.append(param)
-
     for name, spec in signature.parameters.items():
-        # param = make_parameter_param(name, spec)
-        # inputs.append(param)
+        # TODO: translate these
+        #param = make_parameter_param(name, spec)
+        #inputs.append(param)
         pass
 
+    outputs = XMLNode('outputs')
     for name, spec in signature.outputs.items():
         output = make_output(name, spec)
         outputs.append(output)
 
+    tool = XMLNode('tool', id=get_tool_id(action),
+                   name=make_tool_name(plugin_id, action.id),
+                   version=version,
+                   profile='18.09')
+    tool.append(extract_requirements(plugin.project_name))
+    tool.append(XMLNode('description', action.name))
+    tool.append(make_command(plugin_id, action.id))
+    tool.append(make_version_command(plugin_id))
+    tool.append(make_config())
+    tool.append(inputs)
+    tool.append(outputs)
+    tool.append(XMLNode('help', action.description))
     return tool
 
 
@@ -121,31 +113,21 @@ def make_parameter_param(name, spec):
 
 
 def make_output(name, spec):
-    if spec.qiime_type.name == 'Visualization':
-        format_ = 'qzv'
+    if qiime2.sdk.util.is_visualization_type(spec.qiime_type):
+        ext = 'qzv'
     else:
-        format_ = 'qza'
-
-    output = XMLNode(
-        'data', format=format_, name=name,
-        from_work_dir='.'.join([name, format_]))
-
-    return output
+        ext = 'qza'
+    file_name = '.'.join([name, ext])
+    return XMLNode('data', format=ext, name=name, from_work_dir=file_name)
 
 
 def make_command(plugin_id, action_id):
-    command = XMLNode('command')
-    command.text = ("q2galaxy run {plugin_id} {action_id} '$inputs'"
-                    ).format(plugin_id=plugin_id,
-                             action_id=action_id,
-                             INPUT_FILE=INPUT_FILE)
-    return command
+    return XMLNode('command',
+                   f"q2galaxy run {plugin_id} {action_id} '$inputs'")
 
 
 def make_version_command(plugin_id):
-    version_command = XMLNode('version_command')
-    version_command.text = 'q2galaxy version %s' % plugin_id
-    return version_command
+    return XMLNode('version_command', f'q2galaxy version {plugin_id}')
 
 
 def make_citations(citations):

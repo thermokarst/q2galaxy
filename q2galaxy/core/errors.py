@@ -1,0 +1,2 @@
+class CondaPackageNotFound(Exception):
+    pass
